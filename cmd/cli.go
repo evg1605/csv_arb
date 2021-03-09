@@ -3,6 +3,10 @@ package cmd
 import (
 	"errors"
 	"flag"
+	"fmt"
+	"github.com/evg1605/csv_arb/arb_converter"
+	"github.com/evg1605/csv_arb/common"
+	"github.com/evg1605/csv_arb/csv_converter"
 	"log"
 )
 
@@ -15,7 +19,7 @@ type convertMode string
 
 type inputParams struct {
 	mode            convertMode
-	url             string
+	csvUrl          string
 	csvPath         string
 	arbFolderPath   string
 	arbFileTemplate string
@@ -28,7 +32,35 @@ func Run() {
 		flag.PrintDefaults()
 		log.Fatal(err)
 	}
-	_ = params
+
+	switch params.mode {
+	case csv2arbMode:
+		if err := convertCsvToArb(params); err != nil {
+			log.Fatal(err)
+		}
+	default:
+		log.Fatal(fmt.Errorf("unsupported mode %s", params.mode))
+	}
+}
+
+func convertCsvToArb(params *inputParams) error {
+	var dataArb *common.DataArb
+	if params.csvUrl != "" {
+		d, err := csv_converter.LoadArbFromWeb(params.csvUrl, params.defaultCulture)
+		if err != nil {
+			return err
+		}
+		dataArb = d
+	} else if params.csvPath != "" {
+		d, err := csv_converter.LoadArbFromFile(params.csvPath, params.defaultCulture)
+		if err != nil {
+			return err
+		}
+		dataArb = d
+	} else {
+		return errors.New("need to pass csv-url or csv-path")
+	}
+	return arb_converter.SaveArb(dataArb, params.arbFolderPath, params.arbFileTemplate, params.defaultCulture)
 }
 
 func getParams() (*inputParams, error) {
@@ -49,17 +81,13 @@ func getParams() (*inputParams, error) {
 		return nil, errors.New("invalid mode")
 	}
 
-	if mode == csv2arbMode {
-		return nil, errors.New("csv-path is required for arb2csv mode")
-	}
-
-	if *csvPathFlag != "" && *csvUrlFlag != "" {
-		return nil, errors.New("you need to specify only one parameter - csv-url or csv-path")
+	if (*csvPathFlag != "" && *csvUrlFlag != "") || (*csvPathFlag == "" && *csvUrlFlag == "") {
+		return nil, errors.New("you need to specify one parameter - csv-csvUrl or csv-path")
 	}
 
 	params := &inputParams{
 		mode:            mode,
-		url:             *csvUrlFlag,
+		csvUrl:          *csvUrlFlag,
 		csvPath:         *csvPathFlag,
 		arbFolderPath:   *arbFolderPathFlag,
 		arbFileTemplate: *arbFileTemplateFlag,

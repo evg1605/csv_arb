@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func CsvFromFile(filePath string) (*csv.Reader, error) {
+func csvFromFile(filePath string) (*csv.Reader, error) {
 	csvFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func CsvFromFile(filePath string) (*csv.Reader, error) {
 	return csvFromReader(csvFile)
 }
 
-func CsvFromWeb(url string) (*csv.Reader, error) {
+func csvFromWeb(url string) (*csv.Reader, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

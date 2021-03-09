@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
+
+	"github.com/evg1605/csv_arb/common"
 )
 
 const (
@@ -27,72 +28,48 @@ type csvIndexes struct {
 	countFieldsInRow int
 }
 
-type item struct {
-	name        string
-	description string
-	cultures    map[string]string
-	parameters  map[string]struct{}
-}
-
-func WebCsvToArb(csvUrl,
-	arbFolderPath,
-	arbFileTemplate,
-	defaultCulture string) error {
-	r, err := CsvFromWeb(csvUrl)
+func LoadArbFromWeb(csvUrl, defaultCulture string) (*common.DataArb, error) {
+	r, err := csvFromWeb(csvUrl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return csvToArb(r,
-		arbFolderPath,
-		arbFileTemplate,
-		defaultCulture)
+	return loadArb(r, defaultCulture)
 }
 
-func FileCsvToArb(csvPath,
-	arbFolderPath,
-	arbFileTemplate,
-	defaultCulture string) error {
-	r, err := CsvFromFile(csvPath)
+func LoadArbFromFile(csvPath, defaultCulture string) (*common.DataArb, error) {
+	r, err := csvFromFile(csvPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return csvToArb(r,
-		arbFolderPath,
-		arbFileTemplate,
-		defaultCulture)
+	return loadArb(r, defaultCulture)
 }
 
-func csvToArb(r *csv.Reader, arbFolderPath,
-	arbFileTemplate,
-	defaultCulture string) error {
-
+func loadArb(r *csv.Reader, defaultCulture string) (*common.DataArb, error) {
 	fieldsIndexes, err := getFieldsIndexes(r, defaultCulture)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	items, err := getItems(r, fieldsIndexes)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := os.RemoveAll(arbFolderPath); err != nil {
-		return err
+	var cultures []string
+	for cn, _ := range fieldsIndexes.cultures {
+		cultures = append(cultures, cn)
 	}
 
-	if err := os.MkdirAll(arbFolderPath, 0777); err != nil {
-		return err
-	}
-
-	//fieldsIndexes.cultures
-	_ = items
-	return nil
+	return &common.DataArb{
+		Cultures: cultures,
+		Items:    items,
+	}, nil
 }
 
-func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*item, error) {
-	items := make(map[string]*item)
+func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*common.ItemArb, error) {
+	items := make(map[string]*common.ItemArb)
 
 	for {
 		row, err := r.Read()
@@ -109,32 +86,31 @@ func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*item, error
 
 		name := row[fieldsIndexes.name]
 		if _, ok := items[name]; ok {
-			return nil, fmt.Errorf("found more than one key with same name %s: %w", name, errInvalidCsvStructure)
+			return nil, fmt.Errorf("found more than one key with same Name %s: %w", name, errInvalidCsvStructure)
 		}
 
-		i := &item{
-			name:     name,
-			cultures: make(map[string]string),
+		i := &common.ItemArb{
+			Cultures: make(map[string]string),
 		}
 
 		if fieldsIndexes.description != nil {
-			i.description = row[*fieldsIndexes.description]
+			i.Description = row[*fieldsIndexes.description]
 		}
 
 		if fieldsIndexes.parameters != nil {
-			i.parameters = make(map[string]struct{})
+			i.Parameters = make(map[string]struct{})
 			parameters := strings.Split(row[*fieldsIndexes.parameters], ";")
 			for _, p := range parameters {
 				pName := strings.Trim(p, " ")
-				if _, ok := i.parameters[pName]; ok {
-					return nil, fmt.Errorf("key %s has more than one parameter with name %s : %w", name, pName, errInvalidCsvStructure)
+				if _, ok := i.Parameters[pName]; ok {
+					return nil, fmt.Errorf("key %s has more than one parameter with Name %s : %w", name, pName, errInvalidCsvStructure)
 				}
-				i.parameters[pName] = struct{}{}
+				i.Parameters[pName] = struct{}{}
 			}
 		}
 
 		for cn, ci := range fieldsIndexes.cultures {
-			i.cultures[cn] = row[ci]
+			i.Cultures[cn] = row[ci]
 		}
 
 		items[name] = i
@@ -143,7 +119,7 @@ func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*item, error
 }
 
 func getFieldsIndexes(r *csv.Reader, defaultCulture string) (*csvIndexes, error) {
-	// read first row and get indexes of name and description fields
+	// read first row and get indexes of Name and Description fields
 
 	var nameInd, descriptionInd, parametersInd *int
 
@@ -182,11 +158,11 @@ func getFieldsIndexes(r *csv.Reader, defaultCulture string) (*csvIndexes, error)
 	}
 
 	if nameInd == nil {
-		return nil, fmt.Errorf("csv must have column for name: %w", errInvalidCsvStructure)
+		return nil, fmt.Errorf("csv must have column for Name: %w", errInvalidCsvStructure)
 	}
 
 	if len(cultures) == 0 {
-		return nil, fmt.Errorf("cultures not found: %w", errInvalidCsvStructure)
+		return nil, fmt.Errorf("Cultures not found: %w", errInvalidCsvStructure)
 	}
 
 	if _, ok := cultures[defaultCulture]; !ok {

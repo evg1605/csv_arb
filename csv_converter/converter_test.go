@@ -48,9 +48,9 @@ item2,descr2,para;parb2,val-ru-2,val-en-2`)
 	require.Contains(t, items, "item1")
 	require.Contains(t, items, "item2")
 
-	require.Contains(t, items["item1"].cultures, "ru")
-	require.Contains(t, items["item1"].cultures, "en")
+	require.Contains(t, items["item1"].Cultures, "ru")
+	require.Contains(t, items["item1"].Cultures, "en")
 
-	require.Contains(t, items["item1"].parameters, "par1")
-	require.Contains(t, items["item1"].parameters, "par2")
+	require.Contains(t, items["item1"].Parameters, "par1")
+	require.Contains(t, items["item1"].Parameters, "par2")
 }
