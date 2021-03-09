@@ -25,7 +25,8 @@ func TestGetFieldsIndexes(t *testing.T) {
 
 func TestGetItems(t *testing.T) {
 	csvData := fmt.Sprintf(`item1,descr1,par1;par2,val-ru-1,val-en-1
-item2,descr2,para;parb2,val-ru-2,val-en-2`)
+item2,descr2,para,val-ru-2,val-en-2
+item3,descr3,,val-ru-3,val-en-3`)
 
 	r := csv.NewReader(bytes.NewReader([]byte(csvData)))
 	descriptionInd, parametersInd := 1, 2
@@ -43,14 +44,19 @@ item2,descr2,para;parb2,val-ru-2,val-en-2`)
 	items, err := getItems(r, indexes)
 	require.NoError(t, err)
 	require.NotNil(t, items)
-	require.Len(t, items, 2)
+	require.Len(t, items, 3)
 
 	require.Contains(t, items, "item1")
 	require.Contains(t, items, "item2")
+	require.Contains(t, items, "item3")
 
 	require.Contains(t, items["item1"].Cultures, "ru")
 	require.Contains(t, items["item1"].Cultures, "en")
 
 	require.Contains(t, items["item1"].Parameters, "par1")
 	require.Contains(t, items["item1"].Parameters, "par2")
+
+	require.Len(t, items["item1"].Parameters, 2)
+	require.Len(t, items["item2"].Parameters, 1)
+	require.Len(t, items["item3"].Parameters, 0)
 }

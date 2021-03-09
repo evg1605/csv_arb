@@ -98,14 +98,20 @@ func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*common.Item
 		}
 
 		if fieldsIndexes.parameters != nil {
-			i.Parameters = make(map[string]struct{})
-			parameters := strings.Split(row[*fieldsIndexes.parameters], ";")
-			for _, p := range parameters {
+			parameters := make(map[string]struct{})
+			parametersRaw := strings.Split(row[*fieldsIndexes.parameters], ";")
+			for _, p := range parametersRaw {
 				pName := strings.Trim(p, " ")
-				if _, ok := i.Parameters[pName]; ok {
+				if pName == "" {
+					continue
+				}
+				if _, ok := parameters[pName]; ok {
 					return nil, fmt.Errorf("key %s has more than one parameter with Name %s : %w", name, pName, errInvalidCsvStructure)
 				}
-				i.Parameters[pName] = struct{}{}
+				parameters[pName] = struct{}{}
+			}
+			if len(parameters) > 0 {
+				i.Parameters = parameters
 			}
 		}
 
