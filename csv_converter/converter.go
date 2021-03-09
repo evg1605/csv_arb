@@ -1,4 +1,4 @@
-package converter
+package csv_converter
 
 import (
 	"encoding/csv"
@@ -7,8 +7,6 @@ import (
 	"io"
 	"os"
 	"strings"
-
-	"github.com/evg1605/csv_arb/csv_source"
 )
 
 const (
@@ -40,7 +38,7 @@ func WebCsvToArb(csvUrl,
 	arbFolderPath,
 	arbFileTemplate,
 	defaultCulture string) error {
-	r, err := csv_source.CsvFromWeb(csvUrl)
+	r, err := CsvFromWeb(csvUrl)
 	if err != nil {
 		return err
 	}
@@ -55,7 +53,7 @@ func FileCsvToArb(csvPath,
 	arbFolderPath,
 	arbFileTemplate,
 	defaultCulture string) error {
-	r, err := csv_source.CsvFromFile(csvPath)
+	r, err := CsvFromFile(csvPath)
 	if err != nil {
 		return err
 	}

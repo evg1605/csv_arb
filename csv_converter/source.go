@@ -1,4 +1,4 @@
-package csv_source
+package csv_converter
 
 import (
 	"bytes"
