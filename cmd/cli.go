@@ -82,7 +82,7 @@ func getParams() (*inputParams, error) {
 	}
 
 	if (*csvPathFlag != "" && *csvUrlFlag != "") || (*csvPathFlag == "" && *csvUrlFlag == "") {
-		return nil, errors.New("you need to specify one parameter - csv-csvUrl or csv-path")
+		return nil, errors.New("you need to specify one parameter - csv-url or csv-path")
 	}
 
 	params := &inputParams{
