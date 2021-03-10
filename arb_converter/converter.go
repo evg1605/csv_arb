@@ -47,7 +47,7 @@ func SaveArb(dataArb *common.DataArb,
 			m[fmt.Sprintf("@%s", name)] = meta
 		}
 
-		buf, err := json.Marshal(m)
+		buf, err := json.MarshalIndent(m, "", "  ")
 		if err != nil {
 			return err
 		}
