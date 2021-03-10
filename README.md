@@ -6,7 +6,7 @@ Convertor from csv to arb and from arb to csv
 dir=$(mktemp -d) 
 git clone https://github.com/evg1605/csv_arb "$dir" 
 cd "$dir"
-go install -ldflags "-s -w" -v  ./cmd/arbc.go
+go install -ldflags "-s -w"  ./cmd/arbc.go
 ```
 
 #### How to use:
