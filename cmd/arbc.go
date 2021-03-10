@@ -1,13 +1,14 @@
-package cmd
+package main
 
 import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
+
 	"github.com/evg1605/csv_arb/arb_converter"
 	"github.com/evg1605/csv_arb/common"
 	"github.com/evg1605/csv_arb/csv_converter"
-	"log"
 )
 
 const (
@@ -26,7 +27,7 @@ type inputParams struct {
 	defaultCulture  string
 }
 
-func Run() {
+func main() {
 	params, err := getParams()
 	if err != nil {
 		flag.PrintDefaults()
