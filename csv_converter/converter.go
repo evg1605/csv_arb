@@ -79,7 +79,7 @@ func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams) 
 	}
 
 	var cultures []string
-	for cn, _ := range fieldsIndexes.cultures {
+	for cn := range fieldsIndexes.cultures {
 		cultures = append(cultures, cn)
 	}
 
