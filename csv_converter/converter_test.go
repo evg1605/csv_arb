@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetFieldsIndexes(t *testing.T) {
+
 	csvData := fmt.Sprintf(`ru,%s,en,%s,fr,%s`, columnDescription, columnName, columnParameters)
 	r := csv.NewReader(bytes.NewReader([]byte(csvData)))
-	indexes, err := getFieldsIndexes(r, "en")
+	indexes, err := getFieldsIndexes(createLogger(), r, "en")
 
 	require.NoError(t, err)
 	require.NotNil(t, indexes)
@@ -41,7 +43,7 @@ item3,descr3,,val-ru-3,val-en-3`)
 		countFieldsInRow: 5,
 	}
 
-	items, err := getArbItems(r, indexes)
+	items, err := getArbItems(createLogger(), r, indexes)
 	require.NoError(t, err)
 	require.NotNil(t, items)
 	require.Len(t, items, 3)
@@ -59,4 +61,10 @@ item3,descr3,,val-ru-3,val-en-3`)
 	require.Len(t, items["item1"].Parameters, 2)
 	require.Len(t, items["item2"].Parameters, 1)
 	require.Len(t, items["item3"].Parameters, 0)
+}
+
+func createLogger() *logrus.Logger {
+	logger := logrus.New()
+	logger.SetLevel(logrus.TraceLevel)
+	return logger
 }
