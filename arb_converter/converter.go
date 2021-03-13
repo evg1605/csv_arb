@@ -9,9 +9,10 @@ import (
 	"strings"
 
 	"github.com/evg1605/csv_arb/common"
+	"github.com/sirupsen/logrus"
 )
 
-func SaveArb(dataArb *common.DataArb,
+func SaveArb(logger *logrus.Logger, dataArb *common.DataArb,
 	arbFolderPath,
 	arbFileTemplate,
 	defaultCulture string) error {

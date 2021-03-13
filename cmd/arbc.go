@@ -74,7 +74,7 @@ func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
 	var dataArb *common.DataArb
 	if params.csvUrl != "" {
 		logger.Tracef("load arb data from csv web source %s", params.csvUrl)
-		d, err := csv_converter.LoadArbFromWeb(params.csvUrl, params.defaultCulture)
+		d, err := csv_converter.LoadArbFromWeb(logger, params.csvUrl, params.defaultCulture)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
 		dataArb = d
 	} else if params.csvPath != "" {
 		logger.Tracef("load arb data from csv file source %s", params.csvUrl)
-		d, err := csv_converter.LoadArbFromFile(params.csvPath, params.defaultCulture)
+		d, err := csv_converter.LoadArbFromFile(logger, params.csvPath, params.defaultCulture)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
 	}
 
 	logger.Tracef("save arb data to %s", params.arbFolderPath)
-	if err := arb_converter.SaveArb(dataArb, params.arbFolderPath, params.arbFileTemplate, params.defaultCulture); err != nil {
+	if err := arb_converter.SaveArb(logger, dataArb, params.arbFolderPath, params.arbFileTemplate, params.defaultCulture); err != nil {
 		return err
 	}
 	logger.Traceln("arb data saved")

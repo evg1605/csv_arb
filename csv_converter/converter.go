@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/evg1605/csv_arb/common"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,31 +29,37 @@ type csvIndexes struct {
 	countFieldsInRow int
 }
 
-func LoadArbFromWeb(csvUrl, defaultCulture string) (*common.DataArb, error) {
-	r, err := csvFromWeb(csvUrl)
+func LoadArbFromWeb(logger *logrus.Logger, csvUrl, defaultCulture string) (*common.DataArb, error) {
+	logger.Tracef("download csv from url %s", csvUrl)
+	r, err := csvFromWeb(logger, csvUrl)
 	if err != nil {
 		return nil, err
 	}
+	logger.Traceln("csv downloaded")
 
-	return loadArb(r, defaultCulture)
+	return convertCsvToArb(logger, r, defaultCulture)
 }
 
-func LoadArbFromFile(csvPath, defaultCulture string) (*common.DataArb, error) {
-	r, err := csvFromFile(csvPath)
+func LoadArbFromFile(logger *logrus.Logger, csvPath, defaultCulture string) (*common.DataArb, error) {
+	logger.Tracef("load csv from file %s", csvPath)
+	r, err := csvFromFile(logger, csvPath)
 	if err != nil {
 		return nil, err
 	}
+	logger.Traceln("csv loaded")
 
-	return loadArb(r, defaultCulture)
+	return convertCsvToArb(logger, r, defaultCulture)
 }
 
-func loadArb(r *csv.Reader, defaultCulture string) (*common.DataArb, error) {
-	fieldsIndexes, err := getFieldsIndexes(r, defaultCulture)
+func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, defaultCulture string) (*common.DataArb, error) {
+	logger.Traceln("convert csv to arb")
+
+	fieldsIndexes, err := getFieldsIndexes(logger, r, defaultCulture)
 	if err != nil {
 		return nil, err
 	}
 
-	items, err := getItems(r, fieldsIndexes)
+	items, err := getArbItems(logger, r, fieldsIndexes)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +69,14 @@ func loadArb(r *csv.Reader, defaultCulture string) (*common.DataArb, error) {
 		cultures = append(cultures, cn)
 	}
 
+	logger.Traceln("csv to arb converted")
 	return &common.DataArb{
 		Cultures: cultures,
 		Items:    items,
 	}, nil
 }
 
-func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*common.ItemArb, error) {
+func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*common.ItemArb, error) {
 	items := make(map[string]*common.ItemArb)
 
 	for {
@@ -124,7 +132,7 @@ func getItems(r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*common.Item
 	return items, nil
 }
 
-func getFieldsIndexes(r *csv.Reader, defaultCulture string) (*csvIndexes, error) {
+func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, defaultCulture string) (*csvIndexes, error) {
 	// read first row and get indexes of Name and Description fields
 
 	var nameInd, descriptionInd, parametersInd *int

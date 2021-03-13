@@ -6,24 +6,34 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
-func csvFromFile(filePath string) (*csv.Reader, error) {
+func csvFromFile(logger *logrus.Logger, filePath string) (*csv.Reader, error) {
 	csvFile, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
-	defer csvFile.Close()
+	defer func() {
+		if err := csvFile.Close(); err != nil {
+			logger.Warningf("close csv file error: %v", err)
+		}
+	}()
 
 	return csvFromReader(csvFile)
 }
 
-func csvFromWeb(url string) (*csv.Reader, error) {
+func csvFromWeb(logger *logrus.Logger, url string) (*csv.Reader, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			logger.Warningf("close response body error: %v", err)
+		}
+	}()
 
 	return csvFromReader(resp.Body)
 }

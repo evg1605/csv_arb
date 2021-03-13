@@ -41,7 +41,7 @@ item3,descr3,,val-ru-3,val-en-3`)
 		countFieldsInRow: 5,
 	}
 
-	items, err := getItems(r, indexes)
+	items, err := getArbItems(r, indexes)
 	require.NoError(t, err)
 	require.NotNil(t, items)
 	require.Len(t, items, 3)
