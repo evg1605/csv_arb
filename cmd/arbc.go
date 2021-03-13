@@ -64,10 +64,10 @@ func main() {
 		if err := convertCsvToArb(logger, params); err != nil {
 			logger.Fatal(err)
 		}
-		logger.Traceln("converted")
 	default:
 		logger.Fatal(fmt.Errorf("unsupported mode %s", params.mode))
 	}
+	logger.Traceln("converted")
 }
 
 func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
