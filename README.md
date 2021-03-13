@@ -2,7 +2,9 @@
 
 Convertor from csv to arb and from arb to csv
 
-#### Install from source:
+#### Install from releases:
+Download last release from https://github.com/evg1605/csv_arb/releases
+#### Install from sources:
 
 ```
 dir=$(mktemp -d) 
