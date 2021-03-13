@@ -11,13 +11,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	columnName        = "name"
-	columnDescription = "description"
-	columnParameters  = "parameters"
-)
+type CsvParams struct {
+	ColumnName        string
+	ColumnDescription string
+	ColumnParameters  string
+	DefaultCulture    string
+}
 
 var (
+	errInvalidCsvParams    = errors.New("invalid csv params")
 	errInvalidCsvStructure = errors.New("invalid csv")
 )
 
@@ -29,7 +31,7 @@ type csvIndexes struct {
 	countFieldsInRow int
 }
 
-func LoadArbFromWeb(logger *logrus.Logger, csvUrl, defaultCulture string) (*common.DataArb, error) {
+func LoadArbFromWeb(logger *logrus.Logger, csvUrl string, csvParams CsvParams) (*common.DataArb, error) {
 	logger.Tracef("download csv from url %s", csvUrl)
 	r, err := csvFromWeb(logger, csvUrl)
 	if err != nil {
@@ -37,10 +39,10 @@ func LoadArbFromWeb(logger *logrus.Logger, csvUrl, defaultCulture string) (*comm
 	}
 	logger.Traceln("csv downloaded")
 
-	return convertCsvToArb(logger, r, defaultCulture)
+	return convertCsvToArb(logger, r, csvParams)
 }
 
-func LoadArbFromFile(logger *logrus.Logger, csvPath, defaultCulture string) (*common.DataArb, error) {
+func LoadArbFromFile(logger *logrus.Logger, csvPath string, csvParams CsvParams) (*common.DataArb, error) {
 	logger.Tracef("load csv from file %s", csvPath)
 	r, err := csvFromFile(logger, csvPath)
 	if err != nil {
@@ -48,13 +50,25 @@ func LoadArbFromFile(logger *logrus.Logger, csvPath, defaultCulture string) (*co
 	}
 	logger.Traceln("csv loaded")
 
-	return convertCsvToArb(logger, r, defaultCulture)
+	return convertCsvToArb(logger, r, csvParams)
 }
 
-func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, defaultCulture string) (*common.DataArb, error) {
-	logger.Traceln("convert csv to arb")
+func checkCsvParams(csvParams CsvParams) error {
+	if csvParams.DefaultCulture == "" {
+		return fmt.Errorf("invalid DefaultCulture: %w", errInvalidCsvParams)
+	}
+	if csvParams.ColumnName == "" {
+		return fmt.Errorf("invalid ColumnName: %w", errInvalidCsvParams)
+	}
+	return nil
+}
 
-	fieldsIndexes, err := getFieldsIndexes(logger, r, defaultCulture)
+func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams) (*common.DataArb, error) {
+	logger.Traceln("convert csv to arb")
+	if err := checkCsvParams(csvParams); err != nil {
+		return nil, err
+	}
+	fieldsIndexes, err := getFieldsIndexes(logger, r, csvParams)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +146,7 @@ func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes
 	return items, nil
 }
 
-func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, defaultCulture string) (*csvIndexes, error) {
+func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams) (*csvIndexes, error) {
 	// read first row and get indexes of Name and Description fields
 
 	var nameInd, descriptionInd, parametersInd *int
@@ -145,9 +159,13 @@ func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, defaultCulture strin
 	}
 
 	m := map[string]**int{
-		columnName:        &nameInd,
-		columnDescription: &descriptionInd,
-		columnParameters:  &parametersInd,
+		csvParams.ColumnName: &nameInd,
+	}
+	if csvParams.ColumnDescription != "" {
+		m[csvParams.ColumnDescription] = &descriptionInd
+	}
+	if csvParams.ColumnParameters != "" {
+		m[csvParams.ColumnParameters] = &parametersInd
 	}
 
 	for i, f := range row {
@@ -179,8 +197,8 @@ func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, defaultCulture strin
 		return nil, fmt.Errorf("Cultures not found: %w", errInvalidCsvStructure)
 	}
 
-	if _, ok := cultures[defaultCulture]; !ok {
-		return nil, fmt.Errorf("csv must have column for default culture (%s): %w", defaultCulture, errInvalidCsvStructure)
+	if _, ok := cultures[csvParams.DefaultCulture]; !ok {
+		return nil, fmt.Errorf("csv must have column for default culture (%s): %w", csvParams.DefaultCulture, errInvalidCsvStructure)
 	}
 	return &csvIndexes{
 		name:             *nameInd,

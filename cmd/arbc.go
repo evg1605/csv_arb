@@ -24,6 +24,7 @@ type inputParams struct {
 	mode            convertMode
 	csvUrl          string
 	csvPath         string
+	csvParams       csv_converter.CsvParams
 	arbFolderPath   string
 	arbFileTemplate string
 	defaultCulture  string
@@ -31,21 +32,13 @@ type inputParams struct {
 }
 
 func main() {
+	logger := createLogger(logrus.ErrorLevel)
+
 	params, err := getParams()
 	if err != nil {
 		flag.PrintDefaults()
-		panic(err)
+		logger.Fatal(err)
 	}
-
-	logger := logrus.New()
-	logger.SetReportCaller(true)
-	logger.SetFormatter(&logrus.TextFormatter{
-		PadLevelText: true,
-		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
-			filename := path.Base(f.File)
-			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
-		},
-	})
 	logger.SetLevel(params.logLevel)
 
 	logger.Traceln("input params:")
@@ -53,6 +46,9 @@ func main() {
 	logger.Tracef("logLevel: %s", params.logLevel)
 	logger.Tracef("defaultCulture: %s", params.defaultCulture)
 	logger.Tracef("csvUrl: %s", params.csvUrl)
+	logger.Tracef("csvColumnName: %s", params.csvParams.ColumnName)
+	logger.Tracef("csvColumnDescription: %s", params.csvParams.ColumnDescription)
+	logger.Tracef("csvColumnParameters: %s", params.csvParams.ColumnParameters)
 	logger.Tracef("csvPath: %s", params.csvPath)
 	logger.Tracef("arbFolderPath: %s", params.arbFolderPath)
 	logger.Tracef("arbFileTemplate: %s", params.arbFileTemplate)
@@ -74,7 +70,7 @@ func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
 	var dataArb *common.DataArb
 	if params.csvUrl != "" {
 		logger.Tracef("load arb data from csv web source %s", params.csvUrl)
-		d, err := csv_converter.LoadArbFromWeb(logger, params.csvUrl, params.defaultCulture)
+		d, err := csv_converter.LoadArbFromWeb(logger, params.csvUrl, params.csvParams)
 		if err != nil {
 			return err
 		}
@@ -82,7 +78,7 @@ func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
 		dataArb = d
 	} else if params.csvPath != "" {
 		logger.Tracef("load arb data from csv file source %s", params.csvUrl)
-		d, err := csv_converter.LoadArbFromFile(logger, params.csvPath, params.defaultCulture)
+		d, err := csv_converter.LoadArbFromFile(logger, params.csvPath, params.csvParams)
 		if err != nil {
 			return err
 		}
@@ -104,6 +100,9 @@ func getParams() (*inputParams, error) {
 	modeFlag := flag.String("mode", "", "mode of conversion (arb2csv or csv2arb)")
 	csvUrlFlag := flag.String("csv-url", "", "url of csv file")
 	csvPathFlag := flag.String("csv-path", "", "csv file path")
+	csvColNameFlag := flag.String("csv-col-name", "name", "name column name in csv table")
+	csvColDescrFlag := flag.String("csv-col-descr", "description", "name column description in csv table")
+	csvColParamsFlag := flag.String("csv-col-params", "parameters", "name column parameters in csv table")
 	arbFolderPathFlag := flag.String("arb-path", "", "arb folder path (folder contains arb files - one for every culture)")
 	arbFileTemplateFlag := flag.String("arb-template", "app_{culture}.arb", "arb file template")
 	defaultCultureFlag := flag.String("default-culture", "en", "default culture")
@@ -129,9 +128,14 @@ func getParams() (*inputParams, error) {
 	}
 
 	params := &inputParams{
-		mode:            mode,
-		csvUrl:          *csvUrlFlag,
-		csvPath:         *csvPathFlag,
+		mode:    mode,
+		csvUrl:  *csvUrlFlag,
+		csvPath: *csvPathFlag,
+		csvParams: csv_converter.CsvParams{
+			ColumnName:        *csvColNameFlag,
+			ColumnDescription: *csvColDescrFlag,
+			ColumnParameters:  *csvColParamsFlag,
+			DefaultCulture:    *defaultCultureFlag},
 		arbFolderPath:   *arbFolderPathFlag,
 		arbFileTemplate: *arbFileTemplateFlag,
 		defaultCulture:  *defaultCultureFlag,
@@ -139,4 +143,18 @@ func getParams() (*inputParams, error) {
 	}
 
 	return params, nil
+}
+
+func createLogger(level logrus.Level) *logrus.Logger {
+	logger := logrus.New()
+	logger.SetReportCaller(true)
+	logger.SetFormatter(&logrus.TextFormatter{
+		PadLevelText: true,
+		CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+			filename := path.Base(f.File)
+			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
+		},
+	})
+	logger.SetLevel(level)
+	return logger
 }
