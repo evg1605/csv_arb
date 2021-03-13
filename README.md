@@ -25,6 +25,9 @@ arbc --mode=csv2arb --csv-path=[PATH_TO_CSV_FILE] --arb-path=[PATH_TO_FOLDER_CON
 
 `--csv-path`- path to csv file<br/><br/>
 `--csv-url`- url to csv file<br/><br/>
+`--csv-col-name`- name column name in csv table, default value is **name**<br/><br/>
+`--csv-col-descr`- name column description in csv table, default value is **description**<br/><br/>
+`--csv-col-params`- name column parameters in csv table, default value is **parameters**<br/><br/>
 `--arb-path`- arb folder path (folder contains arb files - one for every culture)<br/><br/>
 `--arb-template`- template of arb file name, default value is **app_{culture}.arb**<br/><br/>
 `--default-culture`- default culture, default value is **en**<br/><br/>
