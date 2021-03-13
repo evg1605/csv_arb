@@ -1,6 +1,6 @@
 module github.com/evg1605/csv_arb
 
-go 1.15
+go 1.14
 
 require (
 	github.com/sirupsen/logrus v1.8.1
