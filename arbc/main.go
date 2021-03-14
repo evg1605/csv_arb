@@ -1,16 +1,11 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"path"
 	"runtime"
-	"strings"
 
-	"github.com/evg1605/csv_arb/arb_converter"
-	"github.com/evg1605/csv_arb/common"
-	"github.com/evg1605/csv_arb/csv_converter"
 	"github.com/sirupsen/logrus"
 	"github.com/thatisuday/commando"
 )
@@ -27,10 +22,12 @@ const (
 	logLevelFlag    = "log-level"
 )
 
+var appVersion = "v1.0.0"
+
 func main() {
 	r := commando.
 		SetExecutableName("arbc").
-		SetVersion("v1.0.0").
+		SetVersion(appVersion).
 		SetDescription("Convertor from csv to arb and from arb to csv.")
 
 	var rootCmd *commando.Command
@@ -93,35 +90,6 @@ func baseAction(r *commando.CommandRegistry, c *commando.Command, flags map[stri
 		logger.Fatal(err)
 	}
 	logger.Traceln("success!!!")
-}
-
-func csv2arb(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
-	src, _ := flags[srcFlag].GetString()
-
-	csvParams := csv_converter.CsvParams{}
-	csvParams.ColumnName, _ = flags[colNameFlag].GetString()
-	csvParams.ColumnDescription, _ = flags[colDescrFlag].GetString()
-	csvParams.ColumnParameters, _ = flags[colParamsFlag].GetString()
-	csvParams.DefaultCulture, _ = flags[cultureFlag].GetString()
-
-	var arbData *common.DataArb
-	var arbDataErr error
-	if strings.HasPrefix(src, "http://") || strings.HasPrefix(src, "https://") {
-		arbData, arbDataErr = csv_converter.LoadArbFromWeb(logger, src, csvParams)
-	} else {
-		arbData, arbDataErr = csv_converter.LoadArbFromFile(logger, src, csvParams)
-	}
-	if arbDataErr != nil {
-		return arbDataErr
-	}
-
-	arbFolderPath, _ := flags[arbPathFlag].GetString()
-	arbFileTemplate, _ := flags[arbTemplateFlag].GetString()
-	return arb_converter.SaveArb(logger, arbData, arbFolderPath, arbFileTemplate, csvParams.DefaultCulture)
-}
-
-func arb2csv(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
-	return errors.New("not implemented")
 }
 
 func createLogger(levelFlag commando.FlagValue) (*logrus.Logger, error) {
