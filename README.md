@@ -10,7 +10,7 @@ Download last release from https://github.com/evg1605/csv_arb/releases
 dir=$(mktemp -d) 
 git clone https://github.com/evg1605/csv_arb "$dir" 
 cd "$dir"
-go install -ldflags "-s -w"  ./cmd/arbc.go
+go install -ldflags "-s -w -X main.AppVersion=dev"  ./arbc
 ```
 
 #### How to use:

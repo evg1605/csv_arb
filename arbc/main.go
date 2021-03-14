@@ -22,12 +22,12 @@ const (
 	logLevelFlag    = "log-level"
 )
 
-var appVersion = "v1.0.0"
+var AppVersion = "v1.0.0"
 
 func main() {
 	r := commando.
 		SetExecutableName("arbc").
-		SetVersion(appVersion).
+		SetVersion(AppVersion).
 		SetDescription("Convertor from csv to arb and from arb to csv.")
 
 	var rootCmd *commando.Command
