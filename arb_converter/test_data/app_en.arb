@@ -1,0 +1,26 @@
+{
+  "@aa1": {
+    "description": ""
+  },
+  "@aa2": {
+    "description": ""
+  },
+  "@aa3": {
+    "description": ""
+  },
+  "@myName": {
+    "description": "this is my name",
+    "placeholders": {
+      "p1": {
+        "type": "dynamic"
+      },
+      "par2": {
+        "type": "dynamic"
+      }
+    }
+  },
+  "aa1": "bb1",
+  "aa2": "bb2",
+  "aa3": "bb3\"",
+  "myName": "bye"
+}

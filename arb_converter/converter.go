@@ -2,6 +2,7 @@ package arb_converter
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,16 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func SaveArb(logger *logrus.Logger, dataArb *DataArb,
+const (
+	arbExt = ".arb"
+)
+
+var (
+	ErrArbFile = errors.New("invalid arb file error")
+)
+
+func SaveArb(logger *logrus.Logger,
+	dataArb *DataArb,
 	arbFolderPath,
 	arbFileTemplate,
 	defaultCulture string) error {
@@ -58,4 +68,50 @@ func SaveArb(logger *logrus.Logger, dataArb *DataArb,
 	}
 
 	return nil
+}
+
+func LoadArb(logger *logrus.Logger,
+	arbFolderPath,
+	defaultCulture string) (*DataArb, error) {
+
+	files, err := ioutil.ReadDir(arbFolderPath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		if file.IsDir() || strings.ToLower(path.Ext(file.Name())) != arbExt {
+			logger.Tracef("skip %s", file.Name())
+			continue
+		}
+
+		logger.Tracef("process file %s", file.Name())
+		fullName := path.Join(arbFolderPath, file.Name())
+		rawData, err := ioutil.ReadFile(fullName)
+		if err != nil {
+			return nil, fmt.Errorf("file read error [%s]: %w", fullName, ErrArbFile)
+		}
+
+		var data map[string]interface{}
+		if err := json.Unmarshal(rawData, &data); err != nil {
+			return nil, fmt.Errorf("file unmarshal error [%s]: %w", fullName, ErrArbFile)
+		}
+		culture := getCultureFromData(data)
+		if culture == "" {
+			culture = getCultureFromName(file.Name())
+		}
+		if culture == "" {
+			return nil, fmt.Errorf("can not detect culture for [%s]: %w", fullName, ErrArbFile)
+		}
+	}
+
+	return nil, err
+}
+
+func getCultureFromName(name string) string {
+	return ""
+}
+
+func getCultureFromData(data map[string]interface{}) string {
+	return ""
 }

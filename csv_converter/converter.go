@@ -19,8 +19,8 @@ type CsvParams struct {
 }
 
 var (
-	errInvalidCsvParams    = errors.New("invalid csv params")
-	errInvalidCsvStructure = errors.New("invalid csv")
+	ErrInvalidCsvParams    = errors.New("invalid csv params")
+	ErrInvalidCsvStructure = errors.New("invalid csv")
 )
 
 type csvIndexes struct {
@@ -55,10 +55,10 @@ func LoadArbFromFile(logger *logrus.Logger, csvPath string, csvParams CsvParams)
 
 func checkCsvParams(csvParams CsvParams) error {
 	if csvParams.DefaultCulture == "" {
-		return fmt.Errorf("invalid DefaultCulture: %w", errInvalidCsvParams)
+		return fmt.Errorf("invalid DefaultCulture: %w", ErrInvalidCsvParams)
 	}
 	if csvParams.ColumnName == "" {
-		return fmt.Errorf("invalid ColumnName: %w", errInvalidCsvParams)
+		return fmt.Errorf("invalid ColumnName: %w", ErrInvalidCsvParams)
 	}
 	return nil
 }
@@ -103,12 +103,12 @@ func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes
 		}
 
 		if len(row) != fieldsIndexes.countFieldsInRow {
-			return nil, fmt.Errorf("invalid row with fields count %v, but expect %v: %w", len(row), fieldsIndexes.countFieldsInRow, errInvalidCsvStructure)
+			return nil, fmt.Errorf("invalid row with fields count %v, but expect %v: %w", len(row), fieldsIndexes.countFieldsInRow, ErrInvalidCsvStructure)
 		}
 
 		name := row[fieldsIndexes.name]
 		if _, ok := items[name]; ok {
-			return nil, fmt.Errorf("found more than one key with same Name %s: %w", name, errInvalidCsvStructure)
+			return nil, fmt.Errorf("found more than one key with same Name %s: %w", name, ErrInvalidCsvStructure)
 		}
 
 		i := &arb_converter.ItemArb{
@@ -128,7 +128,7 @@ func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes
 					continue
 				}
 				if _, ok := parameters[pName]; ok {
-					return nil, fmt.Errorf("key %s has more than one parameter with Name %s : %w", name, pName, errInvalidCsvStructure)
+					return nil, fmt.Errorf("key %s has more than one parameter with Name %s : %w", name, pName, ErrInvalidCsvStructure)
 				}
 				parameters[pName] = struct{}{}
 			}
@@ -176,7 +176,7 @@ func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams)
 		ind, ok := m[f]
 		if ok {
 			if *ind != nil {
-				return nil, fmt.Errorf("there should only be one column for the %s: %w", f, errInvalidCsvStructure)
+				return nil, fmt.Errorf("there should only be one column for the %s: %w", f, ErrInvalidCsvStructure)
 			}
 			iTmp := i
 			*ind = &iTmp
@@ -184,21 +184,21 @@ func getFieldsIndexes(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams)
 		}
 
 		if _, ok := cultures[f]; ok {
-			return nil, fmt.Errorf("each culture to be represented by only one column (%s): %w", f, errInvalidCsvStructure)
+			return nil, fmt.Errorf("each culture to be represented by only one column (%s): %w", f, ErrInvalidCsvStructure)
 		}
 		cultures[f] = i
 	}
 
 	if nameInd == nil {
-		return nil, fmt.Errorf("csv must have column for Name: %w", errInvalidCsvStructure)
+		return nil, fmt.Errorf("csv must have column for Name: %w", ErrInvalidCsvStructure)
 	}
 
 	if len(cultures) == 0 {
-		return nil, fmt.Errorf("Cultures not found: %w", errInvalidCsvStructure)
+		return nil, fmt.Errorf("Cultures not found: %w", ErrInvalidCsvStructure)
 	}
 
 	if _, ok := cultures[csvParams.DefaultCulture]; !ok {
-		return nil, fmt.Errorf("csv must have column for default culture (%s): %w", csvParams.DefaultCulture, errInvalidCsvStructure)
+		return nil, fmt.Errorf("csv must have column for default culture (%s): %w", csvParams.DefaultCulture, ErrInvalidCsvStructure)
 	}
 	return &csvIndexes{
 		name:             *nameInd,
