@@ -2,150 +2,139 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
+	"log"
 	"path"
 	"runtime"
+	"strings"
 
 	"github.com/evg1605/csv_arb/arb_converter"
 	"github.com/evg1605/csv_arb/common"
 	"github.com/evg1605/csv_arb/csv_converter"
 	"github.com/sirupsen/logrus"
+	"github.com/thatisuday/commando"
 )
 
 const (
-	arb2csvMode convertMode = "arb2csv"
-	csv2arbMode convertMode = "csv2arb"
+	csvPathFlag     = "csv-path"
+	arbTemplateFlag = "arb-template"
+	srcFlag         = "src"
+	colNameFlag     = "col-name"
+	arbPathFlag     = "arb-path"
+	colDescrFlag    = "col-descr"
+	colParamsFlag   = "col-params"
+	cultureFlag     = "culture"
+	logLevelFlag    = "log-level"
 )
 
-type convertMode string
+func main() {
+	r := commando.
+		SetExecutableName("arbc").
+		SetVersion("v1.0.0").
+		SetDescription("Convertor from csv to arb and from arb to csv.")
 
-type inputParams struct {
-	mode            convertMode
-	csvUrl          string
-	csvPath         string
-	csvParams       csv_converter.CsvParams
-	arbFolderPath   string
-	arbFileTemplate string
-	defaultCulture  string
-	logLevel        logrus.Level
+	var rootCmd *commando.Command
+	rootCmd = commando.
+		Register(nil).
+		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+			r.PrintHelp(rootCmd)
+		})
+
+	var csv2arbCmd *commando.Command
+	csv2arbCmd = commando.
+		Register("csv2arb").
+		SetDescription("convert csv to arb").
+		SetShortDescription("convert csv to arb").
+		AddFlag(srcFlag, "url or path of csv file", commando.String, "").
+		AddFlag(arbTemplateFlag, "arb file template", commando.String, "app_{culture}.arb").
+		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+			baseAction(r, csv2arbCmd, flags, csv2arb)
+		})
+	addCommonFlags(csv2arbCmd)
+
+	var arb2csvCmd *commando.Command
+	arb2csvCmd = commando.
+		Register("arb2csv").
+		SetDescription("convert arb to csv").
+		SetShortDescription("convert arb to csv").
+		AddFlag(csvPathFlag, "path to csv file", commando.String, "").
+		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+			baseAction(r, arb2csvCmd, flags, csv2arb)
+		})
+	addCommonFlags(arb2csvCmd)
+
+	commando.Parse(nil)
 }
 
-func main() {
-	logger := createLogger(logrus.ErrorLevel)
+func addCommonFlags(c *commando.Command) *commando.Command {
+	c.
+		AddFlag(arbPathFlag, "arb folder path (folder contains arb files - one for every culture)", commando.String, "").
+		AddFlag(colNameFlag, "name column name in csv table", commando.String, "name").
+		AddFlag(colDescrFlag, "name column name in csv table", commando.String, "description").
+		AddFlag(colParamsFlag, "name column name in csv table", commando.String, "parameters").
+		AddFlag(cultureFlag, "default culture", commando.String, "en").
+		AddFlag(logLevelFlag, "log level (trace, debug, info, warning, error, fatal, panic)", commando.String, "error")
+	return c
+}
 
-	params, err := getParams()
+func baseAction(r *commando.CommandRegistry, c *commando.Command, flags map[string]commando.FlagValue, action func(*logrus.Logger, map[string]commando.FlagValue) error) {
+	logger, err := createLogger(flags["log-level"])
 	if err != nil {
-		flag.PrintDefaults()
+		r.PrintHelp(c)
+		log.Fatal(err)
+	}
+
+	logger.Traceln("flags:")
+	for k, v := range flags {
+		logger.Tracef("%s: %v", k, v.Value)
+	}
+
+	if err := action(logger, flags); err != nil {
 		logger.Fatal(err)
 	}
-	logger.SetLevel(params.logLevel)
-
-	logger.Traceln("input params:")
-	logger.Tracef("mode: %s", params.mode)
-	logger.Tracef("logLevel: %s", params.logLevel)
-	logger.Tracef("defaultCulture: %s", params.defaultCulture)
-	logger.Tracef("csvUrl: %s", params.csvUrl)
-	logger.Tracef("csvColumnName: %s", params.csvParams.ColumnName)
-	logger.Tracef("csvColumnDescription: %s", params.csvParams.ColumnDescription)
-	logger.Tracef("csvColumnParameters: %s", params.csvParams.ColumnParameters)
-	logger.Tracef("csvPath: %s", params.csvPath)
-	logger.Tracef("arbFolderPath: %s", params.arbFolderPath)
-	logger.Tracef("arbFileTemplate: %s", params.arbFileTemplate)
-	logger.Traceln()
-
-	switch params.mode {
-	case csv2arbMode:
-		logger.Tracef("convert csv to arb in folder %s", params.arbFolderPath)
-		if err := convertCsvToArb(logger, params); err != nil {
-			logger.Fatal(err)
-		}
-	default:
-		logger.Fatal(fmt.Errorf("unsupported mode %s", params.mode))
-	}
-	logger.Traceln("converted")
+	logger.Traceln("success!!!")
 }
 
-func convertCsvToArb(logger *logrus.Logger, params *inputParams) error {
-	var dataArb *common.DataArb
-	if params.csvUrl != "" {
-		logger.Tracef("load arb data from csv web source %s", params.csvUrl)
-		d, err := csv_converter.LoadArbFromWeb(logger, params.csvUrl, params.csvParams)
-		if err != nil {
-			return err
-		}
-		logger.Traceln("arb data loaded")
-		dataArb = d
-	} else if params.csvPath != "" {
-		logger.Tracef("load arb data from csv file source %s", params.csvUrl)
-		d, err := csv_converter.LoadArbFromFile(logger, params.csvPath, params.csvParams)
-		if err != nil {
-			return err
-		}
-		logger.Traceln("arb data loaded")
-		dataArb = d
+func csv2arb(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
+	src, _ := flags[srcFlag].GetString()
+
+	csvParams := csv_converter.CsvParams{}
+	csvParams.ColumnName, _ = flags[colNameFlag].GetString()
+	csvParams.ColumnDescription, _ = flags[colDescrFlag].GetString()
+	csvParams.ColumnParameters, _ = flags[colParamsFlag].GetString()
+	csvParams.DefaultCulture, _ = flags[cultureFlag].GetString()
+
+	var arbData *common.DataArb
+	var arbDataErr error
+	if strings.HasPrefix(src, "http://") || strings.HasPrefix(src, "https://") {
+		arbData, arbDataErr = csv_converter.LoadArbFromWeb(logger, src, csvParams)
 	} else {
-		return errors.New("need to pass csv-url or csv-path")
+		arbData, arbDataErr = csv_converter.LoadArbFromFile(logger, src, csvParams)
+	}
+	if arbDataErr != nil {
+		return arbDataErr
 	}
 
-	logger.Tracef("save arb data to %s", params.arbFolderPath)
-	if err := arb_converter.SaveArb(logger, dataArb, params.arbFolderPath, params.arbFileTemplate, params.defaultCulture); err != nil {
-		return err
-	}
-	logger.Traceln("arb data saved")
-	return nil
+	arbFolderPath, _ := flags[arbPathFlag].GetString()
+	arbFileTemplate, _ := flags[arbTemplateFlag].GetString()
+	return arb_converter.SaveArb(logger, arbData, arbFolderPath, arbFileTemplate, csvParams.DefaultCulture)
 }
 
-func getParams() (*inputParams, error) {
-	modeFlag := flag.String("mode", "", "mode of conversion (arb2csv or csv2arb)")
-	csvUrlFlag := flag.String("csv-url", "", "url of csv file")
-	csvPathFlag := flag.String("csv-path", "", "csv file path")
-	csvColNameFlag := flag.String("csv-col-name", "name", "name column name in csv table")
-	csvColDescrFlag := flag.String("csv-col-descr", "description", "name column description in csv table")
-	csvColParamsFlag := flag.String("csv-col-params", "parameters", "name column parameters in csv table")
-	arbFolderPathFlag := flag.String("arb-path", "", "arb folder path (folder contains arb files - one for every culture)")
-	arbFileTemplateFlag := flag.String("arb-template", "app_{culture}.arb", "arb file template")
-	defaultCultureFlag := flag.String("default-culture", "en", "default culture")
-	logLevelFlag := flag.String("log", "error", "log level (trace, debug, info, warning, error, fatal, panic)")
+func arb2csv(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
+	return errors.New("not implemented")
+}
 
-	flag.Parse()
-	if !flag.Parsed() {
-		return nil, errors.New("invalid parameters")
-	}
-
-	mode := convertMode(*modeFlag)
-	if mode != arb2csvMode && mode != csv2arbMode {
-		return nil, errors.New("invalid mode")
-	}
-
-	if (*csvPathFlag != "" && *csvUrlFlag != "") || (*csvPathFlag == "" && *csvUrlFlag == "") {
-		return nil, errors.New("you need to specify one parameter - csv-url or csv-path")
-	}
-
-	logLevel, err := logrus.ParseLevel(*logLevelFlag)
+func createLogger(levelFlag commando.FlagValue) (*logrus.Logger, error) {
+	level, err := levelFlag.GetString()
 	if err != nil {
 		return nil, err
 	}
 
-	params := &inputParams{
-		mode:    mode,
-		csvUrl:  *csvUrlFlag,
-		csvPath: *csvPathFlag,
-		csvParams: csv_converter.CsvParams{
-			ColumnName:        *csvColNameFlag,
-			ColumnDescription: *csvColDescrFlag,
-			ColumnParameters:  *csvColParamsFlag,
-			DefaultCulture:    *defaultCultureFlag},
-		arbFolderPath:   *arbFolderPathFlag,
-		arbFileTemplate: *arbFileTemplateFlag,
-		defaultCulture:  *defaultCultureFlag,
-		logLevel:        logLevel,
+	lLvl, err := logrus.ParseLevel(level)
+	if err != nil {
+		return nil, err
 	}
 
-	return params, nil
-}
-
-func createLogger(level logrus.Level) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetReportCaller(true)
 	logger.SetFormatter(&logrus.TextFormatter{
@@ -155,6 +144,6 @@ func createLogger(level logrus.Level) *logrus.Logger {
 			return fmt.Sprintf("%s()", f.Function), fmt.Sprintf("%s:%d", filename, f.Line)
 		},
 	})
-	logger.SetLevel(level)
-	return logger
+	logger.SetLevel(lLvl)
+	return logger, nil
 }
