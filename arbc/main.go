@@ -22,7 +22,7 @@ const (
 	logLevelFlag    = "log-level"
 )
 
-var AppVersion = "v1.0.0"
+var AppVersion = "develop"
 
 func main() {
 	r := commando.
