@@ -24,5 +24,6 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         project_path: ./arbc
+        binary_name: "arbc"
         ldflags: "-s -w -X main.AppVersion=${{ env.APP_VERSION }}"
         extra_files: README.md
