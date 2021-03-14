@@ -1,4 +1,4 @@
-package common
+package arb_converter
 
 type DataArb struct {
 	Cultures []string

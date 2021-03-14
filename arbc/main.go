@@ -115,3 +115,8 @@ func createLogger(levelFlag commando.FlagValue) (*logrus.Logger, error) {
 	logger.SetLevel(lLvl)
 	return logger, nil
 }
+
+func getStrFromFlag(flags map[string]commando.FlagValue, flagName string) string {
+	s, _ := flags[flagName].GetString()
+	return s
+}
