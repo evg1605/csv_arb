@@ -13,7 +13,6 @@ import (
 const (
 	csvPathFlag     = "csv-path"
 	arbTemplateFlag = "arb-template"
-	srcFlag         = "src"
 	colNameFlag     = "col-name"
 	arbPathFlag     = "arb-path"
 	colDescrFlag    = "col-descr"
@@ -42,7 +41,7 @@ func main() {
 		Register("csv2arb").
 		SetDescription("convert csv to arb").
 		SetShortDescription("convert csv to arb").
-		AddFlag(srcFlag, "url or path of csv file", commando.String, "").
+		AddFlag(csvPathFlag, "url or path of csv file", commando.String, "").
 		AddFlag(arbTemplateFlag, "arb file template", commando.String, "app_{culture}.arb").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 			baseAction(r, csv2arbCmd, flags, csv2arb)

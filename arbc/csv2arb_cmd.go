@@ -10,7 +10,7 @@ import (
 )
 
 func csv2arb(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
-	src := getStrFromFlag(flags, srcFlag)
+	src := getStrFromFlag(flags, csvPathFlag)
 
 	csvParams := csv_converter.CsvParams{}
 	csvParams.ColumnName, _ = flags[colNameFlag].GetString()
