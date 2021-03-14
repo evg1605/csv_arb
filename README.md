@@ -16,24 +16,35 @@ go install -ldflags "-s -w -X main.AppVersion=dev"  ./arbc
 #### How to use:
 
 ```
-arbc --mode=csv2arb --csv-path=[PATH_TO_CSV_FILE] --arb-path=[PATH_TO_FOLDER_CONTAINS_ARB_FILES]
+arbc csv2arb --csv-path=[PATH_OR_URL_TO_CSV_FILE] --arb-path=[PATH_TO_FOLDER_CONTAINS_ARB_FILES]
+arbc arb2csv --arb-path=[PATH_TO_FOLDER_CONTAINS_ARB_FILES] --csv-path=[PATH_TO_CSV_FILE]
 ```
 
-#### Full params list:
+#### Full params list for csv2arb command:
+```
+   --arb-path                    arb folder path (folder contains arb files - one for every culture)
+   --csv-path                    url or path of csv file 
+   --arb-template                arb file template (default: app_{culture}.arb)
+   --col-descr                   name column name in csv table (default: description)
+   --col-name                    name column name in csv table (default: name)
+   --col-params                  name column name in csv table (default: parameters)
+   --culture                     default culture (default: en)
+   --help                        displays usage information of the application or a command (default: false)
+   --log-level                   log level (trace, debug, info, warning, error, fatal, panic) (default: error)
+```
+<br/>
 
-`--mode`- conversion mode, possible values:<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;`csv2arb`- from csv to arb<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;`arb2csv`- from arb to csv<br/>
-
-`--csv-path`- path to csv file<br/><br/>
-`--csv-url`- url to csv file<br/><br/>
-`--csv-col-name`- name column name in csv table, default value is **name**<br/><br/>
-`--csv-col-descr`- name column description in csv table, default value is **description**<br/><br/>
-`--csv-col-params`- name column parameters in csv table, default value is **parameters**<br/><br/>
-`--arb-path`- arb folder path (folder contains arb files - one for every culture)<br/><br/>
-`--arb-template`- template of arb file name, default value is **app_{culture}.arb**<br/><br/>
-`--default-culture`- default culture, default value is **en**<br/><br/>
-`--log`- log level (**trace**, **debug**, **info**, **warning**, **error**, **fatal**, **panic**), default value is **error**<br/><br/>
+#### Full params list for arb2csv command:
+```
+   --arb-path                    arb folder path (folder contains arb files - one for every culture) 
+   --csv-path                    path to csv file
+   --col-descr                   name column name in csv table (default: description)
+   --col-name                    name column name in csv table (default: name)
+   --col-params                  name column name in csv table (default: parameters)
+   --culture                     default culture (default: en)
+   --help                        displays usage information of the application or a command (default: false)
+   --log-level                   log level (trace, debug, info, warning, error, fatal, panic) (default: error)
+```
 #### Example csv table
 
 | name               	| description                   	| parameters 	| en                                       	| ru                             	|
