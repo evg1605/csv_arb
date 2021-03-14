@@ -16,11 +16,13 @@ jobs:
         goarch: [amd64]
     steps:
     - uses: actions/checkout@v2
+    - name: Set APP_VERSION env
+      run: echo APP_VERSION=$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev ) >> ${GITHUB_ENV}
     - uses: wangyoucao577/go-release-action@v1.14
       with:
         github_token: ${{ secrets.MY_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
-        project_path: ./cmd
-        ldflags: "-s -w"
+        project_path: ./arbc
+        ldflags: "-s -w -X main.AppVersion=${{ env.APP_VERSION }}"
         extra_files: README.md
