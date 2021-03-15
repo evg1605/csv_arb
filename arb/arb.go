@@ -1,4 +1,4 @@
-package arb_converter
+package arb
 
 import (
 	"encoding/json"

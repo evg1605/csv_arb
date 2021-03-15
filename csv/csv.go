@@ -1,4 +1,4 @@
-package csv_converter
+package csv
 
 import (
 	"encoding/csv"
@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/evg1605/csv_arb/arb_converter"
+	"github.com/evg1605/csv_arb/arb"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,7 +31,7 @@ type csvIndexes struct {
 	countFieldsInRow int
 }
 
-func LoadArbFromWeb(logger *logrus.Logger, csvUrl string, csvParams CsvParams) (*arb_converter.DataArb, error) {
+func LoadArbFromWeb(logger *logrus.Logger, csvUrl string, csvParams CsvParams) (*arb.DataArb, error) {
 	logger.Tracef("download csv from url %s", csvUrl)
 	r, err := csvFromWeb(logger, csvUrl)
 	if err != nil {
@@ -42,7 +42,7 @@ func LoadArbFromWeb(logger *logrus.Logger, csvUrl string, csvParams CsvParams) (
 	return convertCsvToArb(logger, r, csvParams)
 }
 
-func LoadArbFromFile(logger *logrus.Logger, csvPath string, csvParams CsvParams) (*arb_converter.DataArb, error) {
+func LoadArbFromFile(logger *logrus.Logger, csvPath string, csvParams CsvParams) (*arb.DataArb, error) {
 	logger.Tracef("load csv from file %s", csvPath)
 	r, err := csvFromFile(logger, csvPath)
 	if err != nil {
@@ -63,7 +63,7 @@ func checkCsvParams(csvParams CsvParams) error {
 	return nil
 }
 
-func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams) (*arb_converter.DataArb, error) {
+func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams) (*arb.DataArb, error) {
 	logger.Traceln("convert csv to arb")
 	if err := checkCsvParams(csvParams); err != nil {
 		return nil, err
@@ -84,14 +84,14 @@ func convertCsvToArb(logger *logrus.Logger, r *csv.Reader, csvParams CsvParams) 
 	}
 
 	logger.Traceln("csv to arb converted")
-	return &arb_converter.DataArb{
+	return &arb.DataArb{
 		Cultures: cultures,
 		Items:    items,
 	}, nil
 }
 
-func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*arb_converter.ItemArb, error) {
-	items := make(map[string]*arb_converter.ItemArb)
+func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes) (map[string]*arb.ItemArb, error) {
+	items := make(map[string]*arb.ItemArb)
 
 	for {
 		row, err := r.Read()
@@ -111,7 +111,7 @@ func getArbItems(logger *logrus.Logger, r *csv.Reader, fieldsIndexes *csvIndexes
 			return nil, fmt.Errorf("found more than one key with same Name %s: %w", name, ErrInvalidCsvStructure)
 		}
 
-		i := &arb_converter.ItemArb{
+		i := &arb.ItemArb{
 			Cultures: make(map[string]string),
 		}
 
