@@ -28,6 +28,7 @@ type Params struct {
 var (
 	ErrInvalidCsvParams    = errors.New("invalid csv params")
 	ErrInvalidCsvStructure = errors.New("invalid csv")
+	ErrInvalidArbStructure = errors.New("invalid arb")
 )
 
 type csvIndexes struct {
@@ -75,22 +76,57 @@ func SaveArb(logger *logrus.Logger, csvPath string, csvParams Params, arbData *a
 	defer w.Flush()
 
 	indexes := createFieldsIndexes(logger, arbData)
-	if err := writeHeader(logger, w, indexes); err != nil {
+
+	if err := writeHeader(logger, w, csvParams, indexes); err != nil {
 		return err
 	}
 
-	return nil
+	return writeItems(logger, w, indexes, arbData.Items)
 }
 
-func writeHeader(logger *logrus.Logger, w *csv.Writer, indexes *csvIndexes) error {
+func writeHeader(logger *logrus.Logger, w *csv.Writer, csvParams Params, indexes *csvIndexes) error {
 	records := make([]string, indexes.countFieldsInRow)
-	records[indexes.name] = ColName
-	records[*indexes.description] = ColDescr
-	records[*indexes.parameters] = ColParams
+	records[indexes.name] = csvParams.ColumnName
+	records[*indexes.description] = csvParams.ColumnDescription
+	records[*indexes.parameters] = csvParams.ColumnParameters
 	for c, cInd := range indexes.cultures {
 		records[cInd] = c
 	}
 	return w.Write(records)
+}
+
+func writeItems(logger *logrus.Logger, w *csv.Writer, indexes *csvIndexes, items map[string]*arb.Item) error {
+	for itemName, item := range items {
+		record := make([]string, indexes.countFieldsInRow)
+
+		record[indexes.name] = itemName
+
+		record[*indexes.description] = item.Description
+
+		if len(item.Parameters) > 0 {
+			sb := &strings.Builder{}
+			for p := range item.Parameters {
+				if sb.Len() > 0 {
+					sb.WriteString(";")
+				}
+				sb.WriteString(p)
+			}
+			record[*indexes.parameters] = sb.String()
+		}
+
+		for c, v := range item.Cultures {
+			cInd, ok := indexes.cultures[c]
+			if !ok {
+				return fmt.Errorf("culture %s not found in culture indexes for csv row: %w", c, ErrInvalidArbStructure)
+			}
+			record[cInd] = v
+		}
+
+		if err := w.Write(record); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func createFieldsIndexes(logger *logrus.Logger, arbData *arb.Data) *csvIndexes {
