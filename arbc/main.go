@@ -6,6 +6,7 @@ import (
 	"path"
 	"runtime"
 
+	"github.com/evg1605/csv_arb/csv"
 	"github.com/sirupsen/logrus"
 	"github.com/thatisuday/commando"
 )
@@ -55,7 +56,7 @@ func main() {
 		SetShortDescription("convert arb to csv").
 		AddFlag(csvPathFlag, "path to csv file", commando.String, "").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			baseAction(r, arb2csvCmd, flags, csv2arb)
+			baseAction(r, arb2csvCmd, flags, arb2csv)
 		})
 	addCommonFlags(arb2csvCmd)
 
@@ -65,9 +66,9 @@ func main() {
 func addCommonFlags(c *commando.Command) *commando.Command {
 	c.
 		AddFlag(arbPathFlag, "arb folder path (folder contains arb files - one for every culture)", commando.String, "").
-		AddFlag(colNameFlag, "name column name in csv table", commando.String, "name").
-		AddFlag(colDescrFlag, "name column name in csv table", commando.String, "description").
-		AddFlag(colParamsFlag, "name column name in csv table", commando.String, "parameters").
+		AddFlag(colNameFlag, "name column name in csv table", commando.String, csv.ColName).
+		AddFlag(colDescrFlag, "name column name in csv table", commando.String, csv.ColDescr).
+		AddFlag(colParamsFlag, "name column name in csv table", commando.String, csv.ColParams).
 		AddFlag(cultureFlag, "default culture", commando.String, "en").
 		AddFlag(logLevelFlag, "log level (trace, debug, info, warning, error, fatal, panic)", commando.String, "error")
 	return c

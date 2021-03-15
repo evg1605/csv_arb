@@ -12,11 +12,12 @@ import (
 func csv2arb(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
 	src := getStrFromFlag(flags, csvPathFlag)
 
-	csvParams := csv.Params{}
-	csvParams.ColumnName, _ = flags[colNameFlag].GetString()
-	csvParams.ColumnDescription, _ = flags[colDescrFlag].GetString()
-	csvParams.ColumnParameters, _ = flags[colParamsFlag].GetString()
-	csvParams.DefaultCulture, _ = flags[cultureFlag].GetString()
+	csvParams := csv.Params{
+		ColumnName:        getStrFromFlag(flags, colNameFlag),
+		ColumnDescription: getStrFromFlag(flags, colDescrFlag),
+		ColumnParameters:  getStrFromFlag(flags, colParamsFlag),
+		DefaultCulture:    getStrFromFlag(flags, cultureFlag),
+	}
 
 	var arbData *arb.Data
 	var arbDataErr error

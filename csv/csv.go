@@ -5,10 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/evg1605/csv_arb/arb"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	ColName   = "name"
+	ColDescr  = "description"
+	ColParams = "parameters"
 )
 
 type Params struct {
@@ -53,9 +60,55 @@ func LoadArbFromFile(logger *logrus.Logger, csvPath string, csvParams Params) (*
 	return convertCsvToArb(logger, r, csvParams)
 }
 
-//func SaveArb(logger *logrus.Logger, csvPath string, csvParams CsvParams, arbData *arb.Data) error {
-//
-//}
+func SaveArb(logger *logrus.Logger, csvPath string, csvParams Params, arbData *arb.Data) error {
+	csvFile, err := os.Create(csvPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := csvFile.Close(); err != nil {
+			logger.Warningf("close csv file error: %v", err)
+		}
+	}()
+
+	w := csv.NewWriter(csvFile)
+	defer w.Flush()
+
+	indexes := createFieldsIndexes(logger, arbData)
+	if err := writeHeader(logger, w, indexes); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeHeader(logger *logrus.Logger, w *csv.Writer, indexes *csvIndexes) error {
+	records := make([]string, indexes.countFieldsInRow)
+	records[indexes.name] = ColName
+	records[*indexes.description] = ColDescr
+	records[*indexes.parameters] = ColParams
+	for c, cInd := range indexes.cultures {
+		records[cInd] = c
+	}
+	return w.Write(records)
+}
+
+func createFieldsIndexes(logger *logrus.Logger, arbData *arb.Data) *csvIndexes {
+	descriptionInd := 1
+	parametersInd := 2
+	indexes := &csvIndexes{
+		name:             0,
+		description:      &descriptionInd,
+		parameters:       &parametersInd,
+		cultures:         make(map[string]int),
+		countFieldsInRow: len(arbData.Cultures) + parametersInd + 1,
+	}
+
+	for cInd, c := range arbData.Cultures {
+		indexes.cultures[c] = parametersInd + cInd + 1
+	}
+	return indexes
+}
 
 func checkCsvParams(csvParams Params) error {
 	if csvParams.DefaultCulture == "" {
