@@ -20,7 +20,7 @@ func TestGetFieldsIndexes(t *testing.T) {
 	)
 	csvData := fmt.Sprintf(`ru,%s,en,%s,fr,%s`, columnDescription, columnName, columnParameters)
 	r := csv.NewReader(bytes.NewReader([]byte(csvData)))
-	indexes, err := getFieldsIndexes(createLogger(), r, CsvParams{
+	indexes, err := getFieldsIndexes(createLogger(), r, Params{
 		ColumnName:        columnName,
 		ColumnDescription: columnDescription,
 		ColumnParameters:  columnParameters,

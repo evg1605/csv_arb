@@ -12,13 +12,13 @@ import (
 func csv2arb(logger *logrus.Logger, flags map[string]commando.FlagValue) error {
 	src := getStrFromFlag(flags, csvPathFlag)
 
-	csvParams := csv.CsvParams{}
+	csvParams := csv.Params{}
 	csvParams.ColumnName, _ = flags[colNameFlag].GetString()
 	csvParams.ColumnDescription, _ = flags[colDescrFlag].GetString()
 	csvParams.ColumnParameters, _ = flags[colParamsFlag].GetString()
 	csvParams.DefaultCulture, _ = flags[cultureFlag].GetString()
 
-	var arbData *arb.DataArb
+	var arbData *arb.Data
 	var arbDataErr error
 	if strings.HasPrefix(src, "http://") || strings.HasPrefix(src, "https://") {
 		arbData, arbDataErr = csv.LoadArbFromWeb(logger, src, csvParams)

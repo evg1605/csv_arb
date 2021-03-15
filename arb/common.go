@@ -1,11 +1,11 @@
 package arb
 
-type DataArb struct {
+type Data struct {
 	Cultures []string
-	Items    map[string]*ItemArb
+	Items    map[string]*Item
 }
 
-type ItemArb struct {
+type Item struct {
 	Description string
 	Cultures    map[string]string
 	Parameters  map[string]struct{}

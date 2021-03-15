@@ -24,7 +24,7 @@ var (
 )
 
 func SaveArb(logger *logrus.Logger,
-	dataArb *DataArb,
+	arbData *Data,
 	arbFolderPath,
 	arbFileTemplate,
 	defaultCulture string) error {
@@ -36,10 +36,10 @@ func SaveArb(logger *logrus.Logger,
 		return err
 	}
 
-	for _, cn := range dataArb.Cultures {
+	for _, cn := range arbData.Cultures {
 		m := make(map[string]interface{})
 
-		for name, item := range dataArb.Items {
+		for name, item := range arbData.Items {
 			m[name] = item.Cultures[cn]
 			if cn != defaultCulture {
 				continue
@@ -75,7 +75,7 @@ func SaveArb(logger *logrus.Logger,
 
 func LoadArb(logger *logrus.Logger,
 	arbFolderPath,
-	defaultCulture string) (*DataArb, error) {
+	defaultCulture string) (*Data, error) {
 
 	files, err := ioutil.ReadDir(arbFolderPath)
 	if err != nil {
@@ -83,7 +83,7 @@ func LoadArb(logger *logrus.Logger,
 	}
 
 	cultures := make(map[string]string)
-	arbItems := make(map[string]*ItemArb)
+	arbItems := make(map[string]*Item)
 
 	for _, file := range files {
 		if file.IsDir() || strings.ToLower(path.Ext(file.Name())) != arbExt {
@@ -117,27 +117,27 @@ func LoadArb(logger *logrus.Logger,
 		processCulture(culture, culture == strings.ToLower(defaultCulture), data, arbItems)
 	}
 
-	dataArb := &DataArb{
+	arbData := &Data{
 		Cultures: nil,
 		Items:    arbItems,
 	}
 	for c := range cultures {
-		dataArb.Cultures = append(dataArb.Cultures, c)
+		arbData.Cultures = append(arbData.Cultures, c)
 	}
-	return dataArb, err
+	return arbData, err
 }
 
 func processCulture(culture string,
 	isDefaultCulture bool,
 	data map[string]interface{},
-	arbItems map[string]*ItemArb) {
+	arbItems map[string]*Item) {
 	for k := range data {
 		if strings.HasPrefix(k, metaPrefix) {
 			continue
 		}
 		item, ok := arbItems[k]
 		if !ok {
-			item = &ItemArb{
+			item = &Item{
 				Description: "",
 				Cultures:    make(map[string]string),
 			}
@@ -152,7 +152,7 @@ func processCulture(culture string,
 	}
 }
 
-func setMeta(itemName string, item *ItemArb, data map[string]interface{}) {
+func setMeta(itemName string, item *Item, data map[string]interface{}) {
 	meta := getMapByKey(metaPrefix+itemName, data)
 	item.Description = getStrByKey("description", meta)
 	placeholders := getMapByKey("placeholders", meta)
