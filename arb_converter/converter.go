@@ -7,13 +7,16 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	arbExt = ".arb"
+	arbExt     = ".arb"
+	localeAttr = "@@locale"
+	metaPrefix = "@"
 )
 
 var (
@@ -79,6 +82,9 @@ func LoadArb(logger *logrus.Logger,
 		return nil, err
 	}
 
+	cultures := make(map[string]string)
+	arbItems := make(map[string]*ItemArb)
+
 	for _, file := range files {
 		if file.IsDir() || strings.ToLower(path.Ext(file.Name())) != arbExt {
 			logger.Tracef("skip %s", file.Name())
@@ -86,32 +92,101 @@ func LoadArb(logger *logrus.Logger,
 		}
 
 		logger.Tracef("process file %s", file.Name())
-		fullName := path.Join(arbFolderPath, file.Name())
-		rawData, err := ioutil.ReadFile(fullName)
+		rawData, err := ioutil.ReadFile(path.Join(arbFolderPath, file.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("file read error [%s]: %w", fullName, ErrArbFile)
+			return nil, fmt.Errorf("file read error [%s]: %w", file.Name(), ErrArbFile)
 		}
 
 		var data map[string]interface{}
 		if err := json.Unmarshal(rawData, &data); err != nil {
-			return nil, fmt.Errorf("file unmarshal error [%s]: %w", fullName, ErrArbFile)
+			return nil, fmt.Errorf("file unmarshal error [%s]: %w", file.Name(), ErrArbFile)
 		}
-		culture := getCultureFromData(data)
+		culture := getStrByKey(localeAttr, data)
 		if culture == "" {
-			culture = getCultureFromName(file.Name())
+			culture = getCultureFromFileName(file.Name())
 		}
 		if culture == "" {
-			return nil, fmt.Errorf("can not detect culture for [%s]: %w", fullName, ErrArbFile)
+			return nil, fmt.Errorf("can not detect culture for [%s]: %w", file.Name(), ErrArbFile)
 		}
+		culture = strings.ToLower(culture)
+
+		if f, ok := cultures[culture]; ok {
+			return nil, fmt.Errorf("same cultures in [%s] and [%s]: %w", f, file.Name(), ErrArbFile)
+		}
+		cultures[culture] = file.Name()
+		processCulture(culture, culture == strings.ToLower(defaultCulture), data, arbItems)
 	}
 
-	return nil, err
+	dataArb := &DataArb{
+		Cultures: nil,
+		Items:    arbItems,
+	}
+	for c := range cultures {
+		dataArb.Cultures = append(dataArb.Cultures, c)
+	}
+	return dataArb, err
 }
 
-func getCultureFromName(name string) string {
-	return ""
+func processCulture(culture string,
+	isDefaultCulture bool,
+	data map[string]interface{},
+	arbItems map[string]*ItemArb) {
+	for k := range data {
+		if strings.HasPrefix(k, metaPrefix) {
+			continue
+		}
+		item, ok := arbItems[k]
+		if !ok {
+			item = &ItemArb{
+				Description: "",
+				Cultures:    make(map[string]string),
+			}
+			arbItems[k] = item
+		}
+		item.Cultures[culture] = getStrByKey(k, data)
+
+		if !isDefaultCulture {
+			continue
+		}
+		setMeta(k, item, data)
+	}
 }
 
-func getCultureFromData(data map[string]interface{}) string {
-	return ""
+func setMeta(itemName string, item *ItemArb, data map[string]interface{}) {
+	meta := getMapByKey(metaPrefix+itemName, data)
+	item.Description = getStrByKey("description", meta)
+	placeholders := getMapByKey("placeholders", meta)
+	if len(placeholders) > 0 {
+		item.Parameters = make(map[string]struct{})
+		for k := range placeholders {
+			item.Parameters[k] = struct{}{}
+		}
+	}
+}
+
+func getCultureFromFileName(name string) string {
+	nameWithoutExt := name[:len(name)-len(filepath.Ext(name))]
+	parts := strings.Split(nameWithoutExt, "_")
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[len(parts)-1]
+}
+
+func getStrByKey(k string, m map[string]interface{}) string {
+	v, ok := m[k]
+	if !ok {
+		return ""
+	}
+	s, _ := v.(string)
+	return s
+}
+
+func getMapByKey(k string, m map[string]interface{}) map[string]interface{} {
+	v, ok := m[k]
+	if !ok {
+		return nil
+	}
+	res, _ := v.(map[string]interface{})
+	return res
 }
